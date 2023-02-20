@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class RayTracingMaster : MonoBehaviour
 {
@@ -11,10 +12,23 @@ public class RayTracingMaster : MonoBehaviour
     private RenderTexture target;
 
     private Camera _camera;
+    
+    // Antialiasing
+    private uint _currentSample = 0;
+    private Material _addMaterial;
 
     private void Awake()
     {
         _camera = GetComponent<Camera>();
+    }
+
+    private void Update()
+    {
+        if (transform.hasChanged)
+        {
+            _currentSample = 0;
+            transform.hasChanged = false;
+        }
     }
 
     // Set the matrices of the camera on the shader
@@ -24,6 +38,8 @@ public class RayTracingMaster : MonoBehaviour
         rayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         
         rayTracingShader.SetTexture(0, "_SkyboxTexture", skyboxTexture);
+        
+        rayTracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -43,8 +59,13 @@ public class RayTracingMaster : MonoBehaviour
         int threadGroupsY = Mathf.CeilToInt(Screen.height / 8.0f);
         rayTracingShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
         
+        if (_addMaterial == null)
+            _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
+        
         // Blit the result texture to the screen
-        Graphics.Blit(target, destination);
+        _addMaterial.SetFloat("_Sample", _currentSample);
+        Graphics.Blit(target, destination, _addMaterial);
+        _currentSample++;
     }
 
     private void InitializeRenderTexture()
@@ -59,6 +80,9 @@ public class RayTracingMaster : MonoBehaviour
             target = new RenderTexture(Screen.width, Screen.height, 0,
                          RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear); 
 
+            // Reset antialiasing
+            _currentSample = 0;
+            
             target.enableRandomWrite = true;
             target.Create();
         }
