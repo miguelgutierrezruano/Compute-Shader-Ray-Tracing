@@ -6,6 +6,9 @@ using Random = UnityEngine.Random;
 
 public class RayTracingMaster : MonoBehaviour
 {
+    [Range(2, 8)] 
+    [SerializeField] private int rayBounces; 
+    
     [SerializeField] private ComputeShader rayTracingShader;
     [SerializeField] private Texture skyboxTexture;
 
@@ -31,15 +34,17 @@ public class RayTracingMaster : MonoBehaviour
         }
     }
 
-    // Set the matrices of the camera on the shader
     private void SetShaderParameters()
     {
+        // Set the matrices of the camera on the shader
         rayTracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
         rayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         
         rayTracingShader.SetTexture(0, "_SkyboxTexture", skyboxTexture);
         
+        // Set parameters
         rayTracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
+        rayTracingShader.SetInt("_RayMaxBounces", rayBounces);
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
