@@ -319,5 +319,5 @@ MonoBehaviour:
   skyboxTexture: {fileID: 2800000, guid: 23d11ae8b1aa9c04a8ec98911b7af3a4, type: 3}
   directionalLight: {fileID: 705507994}
   SphereRadius: {x: 3, y: 8}
-  SpheresMax: 100
+  SpheresMax: 500
   SpherePlacementRadius: 100
