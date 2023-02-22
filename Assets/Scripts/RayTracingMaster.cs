@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 using Random = UnityEngine.Random;
 
 public class RayTracingMaster : MonoBehaviour
@@ -9,8 +10,10 @@ public class RayTracingMaster : MonoBehaviour
     [Range(2, 8)] 
     [SerializeField] private int rayBounces; 
     
+    [Header("References")]
     [SerializeField] private ComputeShader rayTracingShader;
     [SerializeField] private Texture skyboxTexture;
+    [SerializeField] private Light directionalLight;
 
     private RenderTexture target;
 
@@ -32,6 +35,12 @@ public class RayTracingMaster : MonoBehaviour
             _currentSample = 0;
             transform.hasChanged = false;
         }
+
+        if(directionalLight.transform.hasChanged)
+        {
+            _currentSample = 0;
+            directionalLight.transform.hasChanged = false;
+        }
     }
 
     private void SetShaderParameters()
@@ -45,6 +54,13 @@ public class RayTracingMaster : MonoBehaviour
         // Set parameters
         rayTracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
         rayTracingShader.SetInt("_RayMaxBounces", rayBounces);
+
+        // Set lightning in compute shader
+        Vector3 lightDirection = directionalLight.transform.forward;
+        rayTracingShader.SetVector("_DirectionalLight", 
+            new Vector4(lightDirection.x, lightDirection.y, lightDirection.z, directionalLight.intensity));
+
+
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)

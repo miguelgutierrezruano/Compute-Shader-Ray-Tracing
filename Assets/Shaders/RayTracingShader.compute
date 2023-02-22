@@ -17,6 +17,9 @@ float2 _PixelOffset;
 // Number of bounces
 int _RayMaxBounces = 8;
 
+// Directional light vec3 and intensity
+float4 _DirectionalLight;
+
 static const float PI = 3.14159265f;
 
 struct Ray
@@ -132,15 +135,25 @@ float3 Shade(inout Ray ray, RayHit hit)
     // Return the normal if ray hit
     if (hit.distance < 1.#INF)
     {
+		float3 albedo   = float3(0.8f, 0.8f, 0.8f);
         float3 specular = float3(0.6f, 0.6f, 0.6f);
         
         // Reflect the ray and multiply energy with specular reflection
         ray.origin = hit.position + hit.normal * 0.001f;
         ray.direction = reflect(ray.direction, hit.normal);
         ray.energy *= specular;
+
+		// Shadow test ray
+		bool shadow = false;
+		Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
+		RayHit shadowHit = Trace(shadowRay);
+
+		// Return black if shadow hit
+		if (shadowHit.distance != 1.#INF)
+			return float3(0.0f, 0.0f, 0.0f);
         
-        // Return nothing
-        return float3(0.0f, 0.0f, 0.0f);
+		// Return a diffuse-shaded color
+		return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * albedo;
     }
     else
     {
@@ -150,7 +163,7 @@ float3 Shade(inout Ray ray, RayHit hit)
         // Sample the skybox and write it
         float theta = acos(ray.direction.y) / -PI;
         float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-        return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * 1.2f;
+        return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * 1.f;
     }
 }
 
